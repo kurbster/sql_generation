@@ -1,6 +1,7 @@
 experiments/
 data/
 spider/
+few_shot_prompts/
 .vscode/
 .env/
 # Byte-compiled / optimized / DLL files
