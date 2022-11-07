@@ -1,0 +1,6 @@
+experiments/
+data/
+spider/
+.vscode/
+.env/
+__pycache__/

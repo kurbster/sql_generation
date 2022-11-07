@@ -1,0 +1,7 @@
+defaults:
+  - output
+  - base_cfg
+  - api_cfg: gpt_api
+  - generation_cfg: gpt_sql_generation
+  - _self_
+

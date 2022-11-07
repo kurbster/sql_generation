@@ -1,0 +1,19 @@
+{
+    "id": "cmpl-64z60YH7w3ev8WdeSZogBTx2qwKxP",
+    "object": "text_completion",
+    "created": 1666646184,
+    "model": "text-davinci-002",
+    "choices": [
+        {
+            "text": "    What is the nationality of the architect who designed the longest bridge?\n    SQL: SELECT T1.nationality FROM architect AS T1 JOIN bridge AS T2 ON T1.id =  T2.architect_id WHERE length_meters = (SELECT MAX(length_meters) from bridge)",
+            "index": 0,
+            "logprobs": null,
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 2022,
+        "completion_tokens": 67,
+        "total_tokens": 2089
+    }
+}
