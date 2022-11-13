@@ -22,7 +22,7 @@ handlers:
     formatter: simple
     filename: "${hydra:job.name}.log"
 loggers:
-  apiLogger:
+  myLogger:
     level: DEBUG
     handlers: [console, file]
     propagate: no

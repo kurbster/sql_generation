@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -30,7 +30,8 @@ class APIConfig:
     echo: bool = False
     stream: bool = False
 
-    stop: List[str] = field(default_factory=list)
+    # Stop is a list of stop words. But can be None
+    stop: Any = field(default=None)
     logit_bias: Dict[str, float] = field(default_factory=dict)
 
 @dataclass
@@ -48,19 +49,32 @@ class GenerationConfig:
         <SUFFIX>
     """
     header: str = ""
-    prompt: str = ""
     suffix: str = ""
     table_prefix: str = ""
+    # This is the path from the main git dir.
+    data_output_dir: str = "data/generated_data"
     new_schema_few_shot_name: str = "schema_few_shot.txt"
-    # This is how many times to query GPT3 per database
-    n_generations_per_database: int = 1
     
     # These params control the few shot settings.
     # If this is defined then we use that file for all few-shotting
     # Else we calculate few shot at runtime.
     few_shot_file: str = ""
+
+    # Path from the few_shot_prompts dir. This file contains every
+    # Question for every dataset ranked by difficulty. We will
+    # Use this for additional few shotting
+    meta_few_shot_file: str = "grouped_questions.json"
+
+    # This is how many times to query GPT3 per database
+    n_generations_per_database: int = 1
+    random_seed: int = 42
+
+    # These are the list of different prompts to use. They
+    # Will be the last line of text given to the model.
+    prompts: List[str] = field(default_factory=list)
     
-    # These params are only used if few_shot_file is empty
+    # These params are used to add automatic few shot examples.
+    # Which is used for the meta_few_shot_file and when few_shot_file == ""
     query_prefix: str = "SQL: "
     question_prefix: str = "Question: "
     n_few_shot_examples: int = 0

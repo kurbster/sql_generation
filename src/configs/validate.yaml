@@ -1,0 +1,11 @@
+defaults:
+  - output
+  - _self_
+
+# This should be path from the main git dir
+path_to_data: "data/generated_data"
+path_to_database: "data/spider/database"
+
+input_fname: "all_data.json"
+valid_output_fname: "syntax_correct_data.json"
+invalid_output_fname: "syntax_incorrect_data.json"

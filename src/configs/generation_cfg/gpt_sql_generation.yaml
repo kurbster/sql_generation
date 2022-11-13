@@ -6,11 +6,15 @@ defaults:
 # Path is from main dir (above src dir).
 few_shot_file: "few_shot_prompts/culture_company/human_annotated_few_shot.txt"
 
+# Every prompt given will be generated this amount of times
 n_generations_per_database: 3
 
 header: "You are given a schema for a SQL dataset.
 You should generate a question related to the dataset
 and the appropriate SQL query.\n"
 table_prefix: "Tables:"
-prompt: "Generate a query with multiple tables and a GROUP BY statement."
+prompts:
+  - "Generate a query with multiple tables. Every SQL statement should be unique.\n"
+  - "Every SQL query should use different tables and columns.\n"
+  # - "Generate a query with multiple tables and a GROUP BY statement.\n"
 suffix: "Question:"
