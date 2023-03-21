@@ -44,7 +44,12 @@ def main():
             continue
         schema = Schema(get_schema(db_name))
         for pair in question_pairs:
-            sql = get_sql(schema, pair['query'])
+            try:
+                sql = get_sql(schema, pair['query'])
+            except Exception as e:
+                print(f'I am the question pair: {pair}')
+                print(f'I am the bd: {db}')
+                raise e
             hardness = evaluator.eval_hardness(sql)
             grouped_results[db][hardness].append(pair)
 

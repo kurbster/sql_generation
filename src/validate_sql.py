@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import json
+import signal
 import logging
 
 from pathlib import Path
@@ -17,11 +18,33 @@ from omegaconf import OmegaConf
 
 logger = logging.getLogger("myLogger")
 
+class TimeoutError(Exception):
+    pass
+
+def timeout(func):
+    def _handle_timeout(signum, frame):
+        raise TimeoutError("SQL took more than 10 seconds. Marking Invalid.")
+    def wrapper(*a, **kw):
+        signal.signal(signal.SIGALRM, _handle_timeout)
+        signal.alarm(10)
+        try:
+            result = func(*a, **kw)
+        finally:
+            signal.alarm(0)
+        return result
+    return wrapper
+
+@timeout
+def make_query_call(conn, query):
+    conn.query(query)
+
 @hydra.main(config_path="configs", config_name="validate", version_base="1.2")
 def main(cfg):
     logger.info(f'\n{OmegaConf.to_yaml(cfg)}')
     gen_data_path = PARENT_DIR / cfg.path_to_data
     for gen_data_dir in gen_data_path.iterdir():
+        if gen_data_dir.is_file():
+            continue
         logger.info(f'Testing generations for: {gen_data_dir}')
         db_name = gen_data_dir.name
         with open(gen_data_dir / cfg.input_fname) as f:
@@ -33,13 +56,28 @@ def main(cfg):
 
         valid_sql = []
         invalid_sql = []
-        for pair in gen_data:
+        for i, pair in enumerate(gen_data):
+            logger.debug(f'I am the ith iteration: {i}')
             try:
-                conn.query(pair['query'])
-            except sqlalchemy.exc.OperationalError as e:
+                key = 'query' if 'query' in pair else 'gen_sql'
+                # conn.query(pair[key])
+                make_query_call(conn, pair[key])
+            except (sqlalchemy.exc.OperationalError,
+                    sqlalchemy.exc.ResourceClosedError) as e:
                 logger.info('Found invalid sql')
                 pair['error_msg'] = str(e)
                 invalid_sql.append(pair)
+            except TimeoutError as e:
+                logger.warning(e)
+                pair['error_msg'] = "(TimeoutError): Took longer than 10 seconds."
+                invalid_sql.append(pair)
+            except Exception as e:
+                logger.error(f'There was an unexpected exception: {e}')
+                logger.error(f'I am the db: {pair["db_id"]}')
+                logger.error(f'I am the query {pair[key]}')
+                logger.error(f'I am the question {pair["question"]}')
+                # raise e
+                break
             else:
                 valid_sql.append(pair)
         

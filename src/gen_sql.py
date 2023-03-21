@@ -13,7 +13,7 @@ import hydra
 import openai
 
 from omegaconf import OmegaConf
-from openai.error import RateLimitError
+from openai.error import RateLimitError, ServiceUnavailableError
 
 from src.config import (
     APIConfig, ExperimentConfig, GenerationConfig,
@@ -44,7 +44,7 @@ def generate_sql(api_cfg: APIConfig, gen_cfg: GenerationConfig, db_prompts: Dict
 
     def call_model(
         prompt: str, given_prompt: str, difficulty: str,
-        itr: int, db_name: str
+        itr: int, i: int, db_name: str
     ):
         response = openai.Completion.create(
             prompt=prompt,
@@ -56,13 +56,15 @@ def generate_sql(api_cfg: APIConfig, gen_cfg: GenerationConfig, db_prompts: Dict
         prompt += f"{result['output']}\n\n{gen_cfg.suffix}"
         # Save the gpt response json, the input/output/query/question
         # To the experiment directory so we keep track of everything
-        output_queue.append({(db_name, 'response', itr): response})
-        output_queue.append({(db_name, 'input_output', itr): result})
+        output_queue.append({(db_name, 'response', f'{itr}_{i}'): response})
+        output_queue.append({(db_name, 'input_output', f'{itr}_{i}'): result})
         # Save the question query pair directly to the data dir
-        output_queue.append({(db_name, 'pair', itr): 
+        output_queue.append({(db_name, 'pair', f'{itr}_{i}'): 
             {
+                'db_id': db_name,
                 'question': result['question'],
                 'query': result['query'],
+                'n_generation': i,
                 'prompt': given_prompt,
                 'difficulty_of_few_shot': difficulty
             }
@@ -71,8 +73,7 @@ def generate_sql(api_cfg: APIConfig, gen_cfg: GenerationConfig, db_prompts: Dict
 
     try:
         for db_name, prompts in db_prompts.items():
-            itr = 0
-            for prompt in prompts:
+            for itr, prompt in enumerate(prompts):
                 diff = prompt["difficulty_of_few_shot"]
                 given_prompt = prompt["prompt"]
                 text = prompt["text"]
@@ -80,17 +81,24 @@ def generate_sql(api_cfg: APIConfig, gen_cfg: GenerationConfig, db_prompts: Dict
                     'Generating SQL for db: {} with few shot difficulty: {} and prompt: {}'
                     .format(db_name, diff, given_prompt)
                 )
-                for _ in range(gen_cfg.n_generations_per_database):
+                for i in range(gen_cfg.n_generations_per_database):
                     logger.debug(f'I am prompt for {db_name} in iteration {itr}\n{text}')
                     try:
-                        text = call_model(text, given_prompt, diff, itr, db_name)
-                    except RateLimitError:
+                        text = call_model(text, given_prompt, diff, itr, i, db_name)
+                    except RateLimitError as e:
+                        if str(e) == "You exceeded your current quota, please check your plan and billing details.":
+                            logger.error('We ran out of tokens :(')
+                            raise e
                         logger.error('We have hit our rate limit. Writing output then sleeping.')
                         seconds_spent = output_manager.write_output(output_queue)
                         logger.debug(f'Spent: {seconds_spent} seconds writing output')
                         time.sleep(61 - seconds_spent)
-                        text = call_model(text, given_prompt, diff, itr, db_name)
-                    itr += 1
+                        text = call_model(text, given_prompt, diff, itr, i, db_name)
+                    except ServiceUnavailableError as e:
+                        logger.error(e)
+                        logger.error('The service was unavailable sleeping for a minute.')
+                        time.sleep(60)
+                        text = call_model(text, given_prompt, diff, itr, i, db_name)
     except Exception as e:
         # If there's an unexpected exception write output then exit
         output_manager.write_output(output_queue)
@@ -101,7 +109,16 @@ def generate_sql(api_cfg: APIConfig, gen_cfg: GenerationConfig, db_prompts: Dict
 
 def parse_response(response: Dict[str, str], sql_prefix: str) -> Dict[str, str]:
     output = response['choices'][0]['text']
-    question, query = output.split(sql_prefix)
+    try:
+        question, query = output.split(sql_prefix)
+    except ValueError:
+        logger.error(f'Something went wrong when parsing output. The output did not have the SQL prefix. Output: {output}')
+        try:
+            question, query = output.split("SQL:")
+        except ValueError:
+            logger.error(f'Something went wrong when parsing output with a hard-coded value.')
+            question = output
+            query = output
     return {'output': output, 'question': question, 'query': query}
 
 @hydra.main(config_path="configs", config_name="gpt", version_base="1.2")
