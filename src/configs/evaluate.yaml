@@ -1,0 +1,11 @@
+defaults:
+  - evaluation_output
+  - eval_cfg
+  - _self_
+
+# This should be path from the main git dir
+eval_files:
+  # - "data/codex_generations/spider_dev/all_data.json"
+  # - "data/codex_generations/generated_data/all_data.json"
+  # - "data/codex_generations/spider_train/all_data.json"
+  - "data/PICARD/clean_predictions.json"

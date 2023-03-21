@@ -1,0 +1,14 @@
+defaults:
+  - api_base_cfg
+  - _self_
+
+model: "code-davinci-002"
+# Make n generations per question
+# For now keep best_of and n the same
+n: 1
+best_of: 1
+temperature: 0.3
+max_tokens: 128
+presence_penalty: 0.0
+frequency_penalty: 0.0
+stop: ["###"]

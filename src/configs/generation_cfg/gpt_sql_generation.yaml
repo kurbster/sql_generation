@@ -6,15 +6,26 @@ defaults:
 # Path is from main dir (above src dir).
 few_shot_file: "few_shot_prompts/culture_company/human_annotated_few_shot.txt"
 
+# new_schema_few_shot_name: "schema_few_shot.txt"
+new_schema_few_shot_name: "short_few_shot.txt"
+
 # Every prompt given will be generated this amount of times
-n_generations_per_database: 3
+# n_generations_per_database: 5
+n_generations_per_database: 7
+# n_generations_per_database: 10
 
 header: "You are given a schema for a SQL dataset.
 You should generate a question related to the dataset
 and the appropriate SQL query.\n"
 table_prefix: "Tables:"
 prompts:
-  - "Generate a query with multiple tables. Every SQL statement should be unique.\n"
+  # - "Generate a query with multiple tables. Every SQL statement should be unique.\n"
   - "Every SQL query should use different tables and columns.\n"
+  - "You need to generate SQL queries that use different tables and columns.\n"
+  - "Generate a query that contains a WHERE statement.\n"
+  # - "Generate a query that contains a GROUP BY statement.\n"
+  - "You must guarantee every column exists in the correct table in the schema provided above.\n"
+  - "Every column must exist in the specific table schema provided above.\n"
+  # - "Remember if two tables have the same column name, for example, id, you must disambiguate the column name by referencing the table like this 'T1.id'. Make sure every column exists in the table schema provided above.\n"
   # - "Generate a query with multiple tables and a GROUP BY statement.\n"
 suffix: "Question:"

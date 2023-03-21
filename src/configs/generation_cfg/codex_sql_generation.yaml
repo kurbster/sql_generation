@@ -1,0 +1,19 @@
+defaults:
+  - codex_base_cfg
+  - _self_
+
+# Path is from main dir (above src dir).
+data_output_dir: "data/codex_generations"
+
+# If True add a # to every line in prompt
+use_commented_few_shot: False
+
+header: "### SQL tables with their properties:"
+table_prefix: "#"
+suffix: "###"
+
+# Path from the main git dir
+input_data_files:
+  # spider_dev: "data/spider/dev.json"
+  generated_data: "data/generated_data/syntax_correct_data.json"
+  spider_train: "data/spider/total_train_no_music_2.json"

@@ -1,0 +1,10 @@
+defaults:
+  - override hydra/job_logging: logging
+hydra:
+  env:
+    exp_time: "${now:%m_%d_%Y_%H_%M_%S}"
+  output_subdir: "."
+  run:
+    dir: "../codex_experiments/${now:%m-%d-%Y}/${now:%H-%M-%S}"
+  job:
+    chdir: True

@@ -1,0 +1,7 @@
+defaults:
+  - codex_output
+  - base_cfg
+  - api_cfg: codex_api
+  - generation_cfg: codex_sql_generation
+  - _self_
+

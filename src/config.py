@@ -80,11 +80,39 @@ class GenerationConfig:
     n_few_shot_examples: int = 0
 
 @dataclass
+class CodexGenerationConfig(GenerationConfig):
+    # These are the keys in the json to read
+    db_key: str = "db_id"
+    query_key: str = "query"
+    question_key: str = "question"
+    
+    # Should be path from main git dir
+    input_data_files: Dict[str, str] = field(default_factory=dict)
+
+    # If true it will add a # to every line in the schema and few shot examples.
+    # This more follows in line with the openAI SQL generation template
+    # https://beta.openai.com/playground/p/default-sql-translate?model=code-davinci-002
+    use_commented_few_shot: bool = False
+
+@dataclass
+class EvaluationConfig:
+    # All paths are from the main git dir
+    eval_files: List[str] = field(default_factory=list)
+
+    db_key: str = "db_id"
+    pred_key: str = "gen_sql"
+    gold_key: str = "gold_sql"
+    database_path: str = "data/spider/database"
+    eval_output_fname: str = "results.csv"
+
+@dataclass
 class ExperimentConfig:
     api_cfg: APIConfig
     generation_cfg: GenerationConfig
 
 cs = ConfigStore()
 cs.store(name="base_cfg", node=ExperimentConfig)
+cs.store(name="eval_cfg", node=EvaluationConfig)
 cs.store(group="api_cfg", name="api_base_cfg", node=APIConfig)
+cs.store(group="generation_cfg", name="codex_base_cfg", node=CodexGenerationConfig)
 cs.store(group="generation_cfg", name="generation_base_cfg", node=GenerationConfig)
